@@ -127,15 +127,23 @@ class PicoControl:
     def get_time(self) -> int:
         # for startup alone when pico clock is not synced
         ntp = adafruit_ntp.NTP(self.pool, server="pool.ntp.org", tz_offset=-6)
-        rtc.RTC().datetime = ntp.datetime
+        try:
+            rtc.RTC().datetime = ntp.datetime
+        except OSError:
+            print("Reassigning time value didn't work, disregarding that code block")
 
         self.years = int(rtc.RTC().datetime.tm_year)
         self.months = int(rtc.RTC().datetime.tm_mon)
         self.days = int(rtc.RTC().datetime.tm_mday)
         self.hours = int(rtc.RTC().datetime.tm_hour)
-
+        
         if self.hours > 12:
             self.hours -= 12
+        
+        self.italy_hrs = self.hours + 7
+        
+        if self.italy_hrs > 12:
+            self.italy_hrs -= 12
 
         self.minutes = int(rtc.RTC().datetime.tm_min)
         self.seconds = int(rtc.RTC().datetime.tm_sec)
@@ -153,8 +161,8 @@ class PicoControl:
             self.main_row_2.text = f""
             self.main_row_3.text = f""
             self.main_row_4.text = f""
-            self.main_row_5.text = f""
-            self.main_row_6.text = f""
+            self.main_row_5.text = f"Time in Milan"
+            self.main_row_6.text = f"{self.italy_hrs}:{self.minutes:02} (UTC+1)"
 
             self.counter += 1
             if self.counter == 1:
@@ -175,4 +183,4 @@ class PicoControl:
 if __name__ == "__main__":
     print("System on internal power")
     control = PicoControl()
-    control.run_loop(r=0, b=0)
+    control.run_loop()
