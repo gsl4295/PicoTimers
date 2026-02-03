@@ -12,6 +12,7 @@ from terminalio import FONT
 from fourwire import FourWire
 from adafruit_display_text import label
 from adafruit_display_text.scrolling_label import ScrollingLabel
+from adafruit_display_shapes.circle import Circle
 from adafruit_st7735r import ST7735R
 
 # noinspection PyPackageRequirements
@@ -80,7 +81,7 @@ class PicoControl:
         else:
             gc.collect()
 
-    def visuals(self, accent: tuple):
+    def visuals(self, accent: tuple, olympics: bool):
         # Add background with accent color
         splash = Group()
         self.display.root_group = splash
@@ -94,13 +95,33 @@ class PicoControl:
         self.countdown_text_area = label.Label(FONT, text="00:00", color=accent)
         countdown_text_group.append(self.countdown_text_area)
         splash.append(countdown_text_group)
+        
+        if olympics:
+            # rings are from left to right, top to bottom. 1 is top left, 5 is bottom right.
+            radius = 8
+            rings_height = 91
+            olympic_rings_group = Group()
+            ring_1 = Circle(28, rings_height, radius, outline=accent, stroke=1)
+            ring_2 = Circle(47, rings_height, radius, outline=accent, stroke=1)
+            ring_3 = Circle(66, rings_height, radius, outline=accent, stroke=1)    
+            ring_4 = Circle(37, rings_height + radius, radius, outline=accent, stroke=1)
+            ring_5 = Circle(56, rings_height + radius, radius, outline=accent, stroke=1)
+            olympic_rings_group.append(ring_1)
+            olympic_rings_group.append(ring_2)
+            olympic_rings_group.append(ring_3)
+            olympic_rings_group.append(ring_4)
+            olympic_rings_group.append(ring_5)
+            
+            self.comp_day = label.Label(FONT, x=86, y=95, text="Day -", color=accent)
+            olympic_rings_group.append(self.comp_day)
+            splash.append(olympic_rings_group)
 
         main_text_group = Group(scale=1, x=20, y=65)
         self.main_row_1 = label.Label(FONT, y=0, text="", color=accent)
         self.main_row_2 = label.Label(FONT, y=15, text="", color=accent)
         self.main_row_3 = label.Label(FONT, y=30, text="", color=accent)
-        self.main_row_4 = label.Label(FONT, y=45, text="Pico Clock", color=accent)
-        self.main_row_5 = label.Label(FONT, y=60, text="by gsl4295", color=accent)
+        self.main_row_4 = label.Label(FONT, y=45, text="", color=accent)
+        self.main_row_5 = label.Label(FONT, y=60, text="Pico Clock", color=accent)
         self.main_row_6 = label.Label(FONT, y=75, text="Loading...", color=accent)
         main_text_group.append(self.main_row_1)
         main_text_group.append(self.main_row_2)
@@ -163,6 +184,8 @@ class PicoControl:
             self.main_row_4.text = f""
             self.main_row_5.text = f"Time in Milan"
             self.main_row_6.text = f"{self.italy_hrs}:{self.minutes:02} (UTC+1)"
+            
+            self.comp_day.text = f"Day {self.days - 6}"
 
             self.counter += 1
             if self.counter == 1:
@@ -172,15 +195,8 @@ class PicoControl:
 
     def run_loop(self, r=255, g=255, b=255):
         self.led_toggle(False)
-        self.visuals((r, g, b))
+        self.visuals((r, g, b), True)
         self.wifi_connect()
         while True:
             self.get_time()
             self.countdown_loop()
-            self.manage_memory(verbose=False)
-
-
-if __name__ == "__main__":
-    print("System on internal power")
-    control = PicoControl()
-    control.run_loop()
